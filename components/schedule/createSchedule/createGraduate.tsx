@@ -18,12 +18,6 @@ import {
   FormLabel,
   FormMessage,
 } from "@/components/ui/form";
-import {
-  Accordion,
-  AccordionItem,
-  AccordionTrigger,
-  AccordionContent,
-} from "@/components/ui/accordion";
 import { Input } from "@/components/ui/input";
 import { Checkbox } from "@/components/ui/checkbox";
 import { useForm } from "react-hook-form";
@@ -32,37 +26,26 @@ import { z } from "zod";
 import { useToast } from "@/hooks/use-toast";
 import { createGraduate } from "@/actions/ADMIN/postRoutes";
 import Cookies from "js-cookie";
-
-const corporations = [
-  { id: 1, name: "ECOMAS" },
-  { id: 2, name: "CIMADE" },
-  { id: 3, name: "BINEX" },
-  { id: 4, name: "PROMAS" },
-  { id: 5, name: "SAYAN" },
-  { id: 6, name: "RIZO" },
-  { id: 7, name: "SEVEDA" },
-  { id: 8, name: "INALTA" },
-  { id: "all", name: "TODAS LAS CORPORACIONES" },
-];
+import { CorporationAllList } from "@/actions/ADMIN/getRoutes";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
+import { ChevronDown } from "lucide-react";
 
 const formSchema = z.object({
   name: z.string().min(2, { message: "Campo requerido." }),
-  code: z.string().min(1, { message: "Campo requerido." }),
   totalPrice: z.number().min(1, { message: "Debe ser mayor a 0." }),
   credits: z.string().min(1, { message: "Campo requerido." }),
-  state: z.boolean().default(false),
-  checkImage: z.boolean().default(false),
   moduleId: z.array(z.number().optional()),
   corporationId: z.array(z.number()),
 });
 
-interface GraduateForm {
+export interface GraduateForm {
   name: string;
-  code: string;
   totalPrice: number;
   credits: string;
-  state: boolean;
-  checkImage: boolean;
   moduleId?: number[];
   corporationId: number[];
 }
@@ -70,23 +53,41 @@ interface GraduateForm {
 const CreateGraduateForm = () => {
   const [loading, setLoading] = useState(false);
   const [isOpen, setIsOpen] = useState(false);
+  const [isIconOpen, setIsIconOpen] = useState(false);
   const { toast } = useToast();
   const [selectedCorporations, setSelectedCorporations] = useState<number[]>(
     []
   );
+  const [corporations, setCorporations] = useState<
+    { id: number; name: string }[]
+  >([]);
   const form = useForm<GraduateForm>({
     resolver: zodResolver(formSchema),
     defaultValues: {
       name: "",
-      code: "",
       totalPrice: 0,
       credits: "",
-      state: false,
-      checkImage: false,
       moduleId: [],
       corporationId: [],
     },
   });
+
+  useEffect(() => {
+    const fetchCorporations = async () => {
+      try {
+        const token = Cookies.get("token");
+        const data = await CorporationAllList({ token: token || "" });
+        setCorporations(data);
+        const allCorporationIds = data.map((corp) => corp.id);
+        setSelectedCorporations(allCorporationIds);
+        form.setValue("corporationId", allCorporationIds);
+      } catch (error) {
+        console.error("Error fetching corporations:", error);
+      }
+    };
+    fetchCorporations();
+  }, [form]);
+
   const handleCreateGraduate = async (data: GraduateForm) => {
     setLoading(true);
     try {
@@ -126,10 +127,17 @@ const CreateGraduateForm = () => {
     }
   };
 
+  const isAllSelected = selectedCorporations.length === corporations.length;
+
   return (
     <Dialog open={isOpen} onOpenChange={setIsOpen}>
       <DialogTrigger asChild>
-        <Button className="w-[300px] md:w-[200px]" onClick={() => setIsOpen(true)}>Crear Diplomado</Button>
+        <Button
+          className="w-[300px] md:w-[200px]"
+          onClick={() => setIsOpen(true)}
+        >
+          Crear Diplomado
+        </Button>
       </DialogTrigger>
       <DialogContent className="w-full max-w-[90vw] sm:max-w-[80vw] md:max-w-[600px] lg:max-w-[700px] xl:max-w-[800px] dark:bg-blue-950/80">
         <DialogHeader>
@@ -150,21 +158,6 @@ const CreateGraduateForm = () => {
                   </FormLabel>
                   <FormControl>
                     <Input placeholder="Nombre del graduado" {...field} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-            <FormField
-              control={form.control}
-              name="code"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>
-                    Código <span className="text-red-500">*</span>
-                  </FormLabel>
-                  <FormControl>
-                    <Input placeholder="Código" {...field} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -207,72 +200,61 @@ const CreateGraduateForm = () => {
             />
             <FormField
               control={form.control}
-              name="state"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Estado</FormLabel>
-                  <FormControl>
-                    <Checkbox
-                      checked={field.value}
-                      onCheckedChange={field.onChange}
-                    />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-            <FormField
-              control={form.control}
               name="corporationId"
               render={() => (
-                <FormItem>
+                <FormItem className="w-full max-w-max mb-4">
                   <FormLabel>
-                    Corporación <span className="text-red-500">*</span>
+                    Corporación: <span className="text-red-500">*</span>
                   </FormLabel>
                   <FormControl>
-                    <Accordion type="multiple" className="w-full">
-                      <AccordionItem value="all-corporations">
-                        <div className="flex items-center space-x-2">
+                    <Popover onOpenChange={(open) => setIsIconOpen(open)}>
+                      <PopoverTrigger asChild>
+                        <Button
+                          variant="outline"
+                          className="flex justify-between w-full"
+                        >
+                          {isAllSelected
+                            ? "Todas las Corporaciones"
+                            : "Seleccionar Corporaciones"}
+                          <ChevronDown
+                            className={`ml-2 transition-transform duration-200 ${
+                              isIconOpen ? "rotate-180" : ""
+                            }`}
+                            aria-hidden="true"
+                          />
+                        </Button>
+                      </PopoverTrigger>
+                      <PopoverContent>
+                        <div className="flex items-center space-x-2 mb-2">
                           <Checkbox
-                            checked={
-                              selectedCorporations.length ===
-                              corporations.filter(
-                                (corp) => typeof corp.id === "number"
-                              ).length
-                            }
+                            checked={isAllSelected}
+                            className="h-5 w-5"
                             onCheckedChange={(checked) =>
                               handleSelectAll(checked as boolean)
                             }
                           />
-                          <AccordionTrigger>
-                            TODAS LAS CORPORACIONES
-                          </AccordionTrigger>
+                          <label>Todas las Corporaciones</label>
                         </div>
-                        <AccordionContent>
-                          {corporations
-                            .filter((corp) => typeof corp.id === "number")
-                            .map((corp) => (
-                              <div
-                                key={corp.id}
-                                className="flex items-center space-x-2"
-                              >
-                                <Checkbox
-                                  checked={selectedCorporations.includes(
-                                    corp.id as number
-                                  )}
-                                  onCheckedChange={(checked) =>
-                                    handleCorporationSelect(
-                                      corp.id as number,
-                                      checked as boolean
-                                    )
-                                  }
-                                />
-                                <label>{corp.name}</label>
-                              </div>
-                            ))}
-                        </AccordionContent>
-                      </AccordionItem>
-                    </Accordion>
+                        {corporations.map((corp) => (
+                          <div
+                            key={corp.id}
+                            className="flex items-center text-sm space-x-2 space-y-1"
+                          >
+                            <Checkbox
+                              checked={selectedCorporations.includes(corp.id)}
+                              className="h-5 w-5"
+                              onCheckedChange={(checked) =>
+                                handleCorporationSelect(
+                                  corp.id,
+                                  checked as boolean
+                                )
+                              }
+                            />
+                            <label>{corp.name}</label>
+                          </div>
+                        ))}
+                      </PopoverContent>
+                    </Popover>
                   </FormControl>
                   <FormMessage />
                 </FormItem>

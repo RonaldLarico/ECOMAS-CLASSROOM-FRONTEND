@@ -42,7 +42,7 @@ export interface CorporationList {
 
 export interface ModuleParams {
   graduateId: number;
-  name: string;
+  corporationId: number;
   token: string;
 }
 
@@ -55,8 +55,13 @@ interface SessionList {
   id: number;
   name: string;
   linkZoom: string;
-  date: Date;
+  date: string;
+  hour: string;
   speaker: SpeakerList;
+}
+
+interface SessionWrapper {
+  session: SessionList;
 }
 
 export interface ModuleList {
@@ -68,5 +73,5 @@ export interface ModuleList {
   topics: string[];
   totalPrice: number;
   state: boolean;
-  session: SessionList[];
-}
+  session: SessionWrapper[];
+};

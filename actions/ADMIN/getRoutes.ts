@@ -119,7 +119,6 @@ export const CorporationAllList = async ({
         },
       }
     );
-    console.log(response)
     if (!response.ok) {
       const errorBody = await response.text();
       console.error("Error response:", errorBody);
@@ -137,12 +136,12 @@ export const CorporationAllList = async ({
 
 export const ModuleAllListSearch = async ({
   graduateId,
-  name,
+  corporationId,
   token,
 }: ModuleParams): Promise<ModuleList[]> => {
   try {
     const response = await fetch(
-      `${process.env.NEXT_PUBLIC_API_BASE_URL}/api/v1/modules/graduate/${graduateId}/corporation/${name}`,
+      `${process.env.NEXT_PUBLIC_API_BASE_URL}/api/v1/modules/graduate/${graduateId}/corporation/${corporationId}`,
       {
         headers: {
           Authorization: `Bearer ${token}`,
@@ -150,8 +149,7 @@ export const ModuleAllListSearch = async ({
         },
       }
     );
-    console.log("Request URL:", response);
-    console.log("Token:", token);
+    console.log(response)
     if (!response.ok) {
       const errorBody = await response.text();
       console.error("Error response:", errorBody);
@@ -167,14 +165,13 @@ export const ModuleAllListSearch = async ({
   }
 };
 
-export const CorporationAllListSearch = async ({
+export const showCorporation = async ({
   graduateId,
-  name,
   token,
-}: ModuleParams): Promise<ModuleList[]> => {
+}: ListParams): Promise<CorporationList[]> => {
   try {
     const response = await fetch(
-      `${process.env.NEXT_PUBLIC_API_BASE_URL}/api/v1/modules/graduate/${graduateId}/corporation/${name}`,
+      `${process.env.NEXT_PUBLIC_API_BASE_URL}/api/v1/corporation/graduate/${graduateId}`,
       {
         headers: {
           Authorization: `Bearer ${token}`,
@@ -182,8 +179,6 @@ export const CorporationAllListSearch = async ({
         },
       }
     );
-    console.log("Request URL:", response);
-    console.log("Token:", token);
     if (!response.ok) {
       const errorBody = await response.text();
       console.error("Error response:", errorBody);
@@ -192,7 +187,7 @@ export const CorporationAllListSearch = async ({
 
     const data = await response.json();
 
-    return data as ModuleList[];
+    return data as CorporationList[];
   } catch (error) {
     console.log("Error fetching graduates:", error);
     throw error;

@@ -129,7 +129,7 @@ const CreateGraduateForm = () => {
   return (
     <Dialog open={isOpen} onOpenChange={setIsOpen}>
       <DialogTrigger asChild>
-        <Button onClick={() => setIsOpen(true)}>Crear Diplomado</Button>
+        <Button className="w-[300px] md:w-[200px]" onClick={() => setIsOpen(true)}>Crear Diplomado</Button>
       </DialogTrigger>
       <DialogContent className="w-full max-w-[90vw] sm:max-w-[80vw] md:max-w-[600px] lg:max-w-[700px] xl:max-w-[800px] dark:bg-blue-950/80">
         <DialogHeader>
